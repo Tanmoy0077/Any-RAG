@@ -1,5 +1,7 @@
 import React from "react";
 import { FiUser, FiCpu } from "react-icons/fi";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface ChatMessageProps {
   message: {
@@ -26,7 +28,13 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
             : "bg-gray-800 text-white rounded-bl-none"
         }`}
       >
-        <p className="whitespace-pre-wrap">{content}</p>
+        {isUser ? (
+          <p className="whitespace-pre-wrap">{content}</p>
+        ) : (
+          <div className="markdown-content">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+          </div>
+        )}
       </div>
       {isUser && (
         <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">

@@ -3,12 +3,18 @@ import { useNavigate, Link } from "react-router-dom";
 import ChatMessage from "../components/ChatMessage";
 import ChatInput from "../components/ChatInput";
 import Button from "../components/Button";
-import { sendMessageToAI } from "../utils/chatService";
+import {
+  sendMessage,
+  generateUserId,
+  clearChatHistory,
+} from "../utils/chatService";
+import type { BackendMessage } from "../utils/chatService";
 import { FiPlusCircle } from "react-icons/fi";
 import { Logo } from "../components/Logo";
 import ChatIntro from "../components/ChatIntro";
+import TypingIndicator from "../components/TypingIndicator";
 
-interface Message {
+export interface Message {
   id: string;
   content: string;
   isUser: boolean;
@@ -18,6 +24,7 @@ const ChatPage: React.FC = () => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [userId, setUserId] = useState<string>(() => generateUserId());
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Check if documents are loaded
@@ -46,13 +53,13 @@ const ChatPage: React.FC = () => {
 
     try {
       // Get AI response
-      const response = await sendMessageToAI(content);
+      const response: BackendMessage = await sendMessage(content, userId);
 
       // Add AI message
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: response,
-        isUser: false,
+        content: response.content,
+        isUser: response.role !== "assistant",
       };
 
       setMessages((prevMessages) => [...prevMessages, aiMessage]);
@@ -73,7 +80,7 @@ const ChatPage: React.FC = () => {
     }
   };
 
-  const handleNewChat = () => {
+  const handleNewChat = async () => {
     if (
       messages.length > 0 &&
       !window.confirm(
@@ -83,7 +90,14 @@ const ChatPage: React.FC = () => {
       return;
     }
 
+    try {
+      await clearChatHistory(userId);
+    } catch (error) {
+      console.error("Failed to clear chat history on the server:", error);
+    }
+
     setMessages([]);
+    setUserId(generateUserId());
   };
 
   return (
@@ -122,6 +136,7 @@ const ChatPage: React.FC = () => {
               {messages.map((message) => (
                 <ChatMessage key={message.id} message={message} />
               ))}
+              {isLoading && <TypingIndicator />}
               <div ref={messagesEndRef} />
             </div>
           )}

@@ -6,16 +6,18 @@ import ProcessingStatus from "../components/ProcessingStatus";
 import Button from "../components/Button";
 import { processDocuments } from "../utils/documentProcessor";
 import { FiArrowRight } from "react-icons/fi";
+// import { toast } from "react-toastify";
 
 const UploadPage: React.FC = () => {
   const navigate = useNavigate();
   const [files, setFiles] = useState<File[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   const processingSteps = [
+    "Preparing upload",
     "Uploading documents",
-    "Extracting text content",
     "Processing content",
     "Building knowledge base",
     "Ready for chat",
@@ -29,6 +31,7 @@ const UploadPage: React.FC = () => {
     if (files.length === 0) return;
 
     setIsProcessing(true);
+    setError(null);
 
     try {
       await processDocuments(files, (step) => {
@@ -41,7 +44,11 @@ const UploadPage: React.FC = () => {
       }, 1000);
     } catch (error) {
       console.error("Error processing documents:", error);
+      setError(
+        error instanceof Error ? error.message : "Failed to process documents"
+      );
       setIsProcessing(false);
+      setCurrentStep(0);
     }
   };
 
@@ -70,6 +77,11 @@ const UploadPage: React.FC = () => {
           ) : (
             <div>
               <FileUploader onFilesSelected={handleFilesSelected} />
+              {error && (
+                <div className="mt-4 p-4 bg-red-500 bg-opacity-20 border border-red-500 rounded-lg text-red-300">
+                  {error}
+                </div>
+              )}
               <div className="mt-8 text-center">
                 <Button
                   onClick={handleSubmit}
